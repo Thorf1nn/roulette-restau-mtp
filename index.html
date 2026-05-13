@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Choisir un resto - Gare Sud / Odysseum Montpellier</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  h1 {
+    color: #ffd700;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+  .sous-titre {
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 14px;
+  }
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .ecran {
+    display: none;
+  }
+  .ecran.actif {
+    display: block;
+    animation: fade 0.4s ease;
+  }
+  @keyframes fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .question-bloc {
+    background: #16213e;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+  }
+  .question-num {
+    color: #ffd700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .question-titre {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .options.grille {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .option {
+    background: #0f3460;
+    border: 2px solid transparent;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 16px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .option:hover {
+    border-color: #ffd700;
+    transform: translateX(5px);
+  }
+  .option.selectionnee {
+    background: #ffd700;
+    color: #1a1a2e;
+    font-weight: bold;
+    border-color: #ffd700;
+  }
+  .navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .btn {
+    background: #ffd700;
+    color: #1a1a2e;
+    border: none;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    flex: 1;
+  }
+  .btn:hover:not(:disabled) {
+    transform: scale(1.03);
+  }
+  .btn:disabled {
+    background: #555;
+    color: #999;
+    cursor: not-allowed;
+  }
+  .btn-secondaire {
+    background: transparent;
+    color: #ffd700;
+    border: 2px solid #ffd700;
+  }
+  .progression {
+    background: #16213e;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 25px;
+  }
+  .progression-barre {
+    background: #ffd700;
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+  .resultats-liste {
+    background: #16213e;
+    padding: 25px;
+    border-radius: 15px;
+  }
+  .resto-card {
+    background: #0f3460;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #ffd700;
+  }
+  .resto-nom {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffd700;
+  }
+  .resto-info {
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 4px;
+  }
+  .roulette-wrapper {
+    position: relative;
+    width: 450px;
+    height: 450px;
+    margin: 20px auto;
+  }
+  .fleche {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 30px solid #ff4757;
+    z-index: 10;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));
+  }
+  canvas {
+    border-radius: 50%;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    display: block;
+  }
+  .resultat-final {
+    background: #16213e;
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px solid #ffd700;
+    text-align: center;
+    margin-top: 20px;
+    display: none;
+  }
+  .resultat-final.visible {
+    display: block;
+    animation: pop 0.5s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .resultat-nom {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 28px;
+    margin: 8px 0;
+  }
+  .info-filtres {
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  .aucun-resto {
+    text-align: center;
+    padding: 30px;
+    background: #16213e;
+    border-radius: 15px;
+    color: #ff6b6b;
+  }
+  @media (max-width: 500px) {
+    .options.grille { grid-template-columns: 1fr; }
+    .roulette-wrapper { width: 90vw; height: 90vw; }
+    canvas { width: 100%; height: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Choisir un resto</h1>
+<p class="sous-titre">Gare Sud de France → Odysseum, Montpellier</p>
+
+<div class="container">
+
+  <!-- Questionnaire -->
+  <div id="ecranQuestionnaire" class="ecran actif">
+    <div class="progression">
+      <div class="progression-barre" id="barreProgression" style="width: 20%"></div>
+    </div>
+    <div id="questionContainer"></div>
+    <div class="navigation">
+      <button class="btn btn-secondaire" id="btnPrecedent" onclick="precedent()">Précédent</button>
+      <button class="btn" id="btnSuivant" onclick="suivant()" disabled>Suivant</button>
+    </div>
+  </div>
+
+  <!-- Résultats + roulette -->
+  <div id="ecranResultats" class="ecran">
+    <div class="info-filtres" id="infoFiltres"></div>
+    <div id="contenuResultats"></div>
+    <div class="navigation" style="margin-top: 20px;">
+      <button class="btn btn-secondaire" onclick="recommencer()">Recommencer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const restaurants = [
+  { nom: "Au Bureau", type: "Pub / brasserie", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["pose", "festif"], envie: ["viande"] },
+  { nom: "Bistro Régent", type: "Bistrot français", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande"] },
+  { nom: "Black Corner", type: "Burgers / américain", zone: "Odysseum", cuisine: ["burger"], budget: 2, ambiance: ["pose"], envie: ["viande"] },
+  { nom: "Brasserie Gusto", type: "Brasserie italienne", zone: "Odysseum", cuisine: ["italien"], budget: 3, ambiance: ["pose"], envie: ["viande", "sucresale"] },
+  { nom: "Burger King", type: "Fast-food burgers", zone: "Odysseum", cuisine: ["burger"], budget: 1, ambiance: ["rapide"], envie: ["viande"] },
+  { nom: "Columbus Café", type: "Café / sandwichs", zone: "Odysseum", cuisine: ["healthy"], budget: 1, ambiance: ["rapide"], envie: ["veggie"] },
+  { nom: "Crêperie Amélie", type: "Crêpes / galettes", zone: "Odysseum", cuisine: ["francais"], budget: 2, ambiance: ["pose"], envie: ["sucresale", "veggie"] },
+  { nom: "Doppio Malto", type: "Brasserie italienne", zone: "Odysseum", cuisine: ["italien"], budget: 3, ambiance: ["pose", "festif"], envie: ["viande"] },
+  { nom: "Hippopotamus", type: "Grill / steakhouse", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande"] },
+  { nom: "Il Ristorante", type: "Italien", zone: "Odysseum", cuisine: ["italien"], budget: 3, ambiance: ["pose"], envie: ["viande", "sucresale"] },
+  { nom: "KFC", type: "Fast-food poulet", zone: "Odysseum", cuisine: ["burger"], budget: 1, ambiance: ["rapide"], envie: ["viande"] },
+  { nom: "Le Sud", type: "Cuisine méditerranéenne", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande", "poisson"] },
+  { nom: "Les 3 Brasseurs", type: "Brasserie / bières", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["pose", "festif"], envie: ["viande"] },
+  { nom: "Les Jardins de l'Orchidée", type: "Asiatique", zone: "Odysseum", cuisine: ["asiatique"], budget: 2, ambiance: ["pose"], envie: ["viande", "veggie"] },
+  { nom: "Le Lézard sur Pâtes", type: "Pâtes / italien", zone: "Odysseum", cuisine: ["italien"], budget: 2, ambiance: ["rapide", "pose"], envie: ["sucresale", "veggie"] },
+  { nom: "Ma Première Cantine", type: "Cantine bio", zone: "Odysseum", cuisine: ["healthy"], budget: 2, ambiance: ["rapide"], envie: ["veggie", "viande"] },
+  { nom: "McDonald's", type: "Fast-food", zone: "Odysseum", cuisine: ["burger"], budget: 1, ambiance: ["rapide"], envie: ["viande"] },
+  { nom: "Odiki Sushi", type: "Japonais sushi", zone: "Odysseum", cuisine: ["asiatique"], budget: 3, ambiance: ["pose"], envie: ["poisson"] },
+  { nom: "Pirates Paradise", type: "Restaurant à thème", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["festif", "pose"], envie: ["viande"] },
+  { nom: "Pokawa", type: "Poké bowls", zone: "Odysseum", cuisine: ["healthy"], budget: 2, ambiance: ["rapide"], envie: ["poisson", "veggie"] },
+  { nom: "Popeyes", type: "Fast-food poulet", zone: "Odysseum", cuisine: ["burger"], budget: 1, ambiance: ["rapide"], envie: ["viande"] },
+  { nom: "Subway", type: "Sandwichs", zone: "Odysseum", cuisine: ["tacos"], budget: 1, ambiance: ["rapide"], envie: ["viande", "veggie"] },
+  { nom: "Under The Sea", type: "Restaurant à thème", zone: "Odysseum", cuisine: ["francais"], budget: 3, ambiance: ["festif", "pose"], envie: ["poisson", "viande"] },
+  { nom: "Kinosa", type: "Restaurant", zone: "Près Gare Sud", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande", "poisson"] },
+  { nom: "Picky Joe", type: "Burgers", zone: "Près Gare Sud", cuisine: ["burger"], budget: 2, ambiance: ["pose", "rapide"], envie: ["viande"] },
+  { nom: "Il Bar A Pizze", type: "Pizzeria", zone: "Près Gare Sud", cuisine: ["italien"], budget: 2, ambiance: ["pose"], envie: ["sucresale", "veggie"] },
+  { nom: "A Tavola", type: "Italien", zone: "Près Gare Sud", cuisine: ["italien"], budget: 3, ambiance: ["pose"], envie: ["sucresale", "viande"] },
+  { nom: "Terminal #1", type: "Restaurant", zone: "Gare Sud de France", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande", "poisson"] },
+  { nom: "Le Mélice", type: "Cuisine locale bio", zone: "Port Marianne", cuisine: ["healthy", "francais"], budget: 3, ambiance: ["pose"], envie: ["veggie", "viande", "poisson"] },
+  { nom: "BG by l'Endroit", type: "Restaurant", zone: "Port Marianne", cuisine: ["francais"], budget: 4, ambiance: ["pose", "festif"], envie: ["viande", "poisson"] },
+  { nom: "Muchacha Rooftop", type: "Rooftop / cocktails", zone: "Marché du Lez", cuisine: ["healthy"], budget: 3, ambiance: ["festif"], envie: ["sucresale", "veggie"] },
+  { nom: "Mas Campo", type: "Restaurant", zone: "Près Gare Sud", cuisine: ["francais"], budget: 3, ambiance: ["pose"], envie: ["viande"] },
+  { nom: "Food Truck Burger", type: "Food truck burgers", zone: "Gare Sud de France", cuisine: ["burger"], budget: 1, ambiance: ["rapide"], envie: ["viande"] },
+  { nom: "Food Truck Sénégalais", type: "Food truck sénégalais", zone: "Gare Sud de France", cuisine: ["autre"], budget: 1, ambiance: ["rapide"], envie: ["viande"] }
+];
+
+const questions = [
+  {
+    cle: "budget",
+    titre: "C'est quoi le budget ?",
+    options: [
+      { label: "Moins de 10€ — petit budget", valeur: 1 },
+      { label: "10 à 20€ — raisonnable", valeur: 2 },
+      { label: "20 à 30€ — on se fait plaisir", valeur: 3 },
+      { label: "30€+ — soirée spéciale", valeur: 4 },
+      { label: "Peu importe", valeur: "any" }
+    ]
+  },
+  {
+    cle: "cuisine",
+    titre: "Quelle cuisine ?",
+    grille: true,
+    options: [
+      { label: "Burger / fast-food", valeur: "burger" },
+      { label: "Italien / pizza / pâtes", valeur: "italien" },
+      { label: "Asiatique / sushi", valeur: "asiatique" },
+      { label: "Français / brasserie", valeur: "francais" },
+      { label: "Healthy / bowl", valeur: "healthy" },
+      { label: "Sandwich / wrap", valeur: "tacos" },
+      { label: "Peu importe", valeur: "any" }
+    ]
+  },
+  {
+    cle: "ambiance",
+    titre: "Quelle ambiance ?",
+    options: [
+      { label: "Rapide — sur le pouce", valeur: "rapide" },
+      { label: "Posé — s'asseoir, prendre son temps", valeur: "pose" },
+      { label: "Festif — bar, rooftop, ambiance", valeur: "festif" },
+      { label: "Peu importe", valeur: "any" }
+    ]
+  },
+  {
+    cle: "zone",
+    titre: "T'es prêt à aller jusqu'où ?",
+    options: [
+      { label: "Gare Sud uniquement", valeur: "gare" },
+      { label: "OK jusqu'à Odysseum (15 min)", valeur: "odysseum" },
+      { label: "OK jusqu'à Port Marianne / Lez", valeur: "loin" }
+    ]
+  },
+  {
+    cle: "envie",
+    titre: "Une envie particulière ?",
+    options: [
+      { label: "Viande", valeur: "viande" },
+      { label: "Poisson / sushi", valeur: "poisson" },
+      { label: "Veggie", valeur: "veggie" },
+      { label: "Sucré-salé", valeur: "sucresale" },
+      { label: "Peu importe", valeur: "any" }
+    ]
+  }
+];
+
+const reponses = {};
+let questionActuelle = 0;
+
+function afficherQuestion() {
+  const q = questions[questionActuelle];
+  const container = document.getElementById("questionContainer");
+  const reponseExistante = reponses[q.cle];
+
+  container.innerHTML = `
+    <div class="question-bloc">
+      <div class="question-num">Question ${questionActuelle + 1} / ${questions.length}</div>
+      <div class="question-titre">${q.titre}</div>
+      <div class="options ${q.grille ? 'grille' : ''}">
+        ${q.options.map((opt, i) => `
+          <button class="option ${reponseExistante === opt.valeur ? 'selectionnee' : ''}"
+                  data-valeur="${opt.valeur}"
+                  onclick="choisirOption('${q.cle}', ${typeof opt.valeur === 'number' ? opt.valeur : `'${opt.valeur}'`})">
+            ${opt.label}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("barreProgression").style.width =
+    ((questionActuelle + 1) / questions.length * 100) + "%";
+  document.getElementById("btnPrecedent").style.visibility =
+    questionActuelle === 0 ? "hidden" : "visible";
+  document.getElementById("btnSuivant").textContent =
+    questionActuelle === questions.length - 1 ? "Voir les restos" : "Suivant";
+  document.getElementById("btnSuivant").disabled = reponseExistante === undefined;
+}
+
+function choisirOption(cle, valeur) {
+  reponses[cle] = valeur;
+  document.querySelectorAll(".option").forEach(btn => btn.classList.remove("selectionnee"));
+  event.target.classList.add("selectionnee");
+  document.getElementById("btnSuivant").disabled = false;
+}
+
+function suivant() {
+  if (questionActuelle < questions.length - 1) {
+    questionActuelle++;
+    afficherQuestion();
+  } else {
+    afficherResultats();
+  }
+}
+
+function precedent() {
+  if (questionActuelle > 0) {
+    questionActuelle--;
+    afficherQuestion();
+  }
+}
+
+function filtrer() {
+  return restaurants.filter(r => {
+    if (reponses.budget !== "any" && r.budget !== reponses.budget) {
+      if (Math.abs(r.budget - reponses.budget) > 1) return false;
+    }
+    if (reponses.cuisine !== "any" && !r.cuisine.includes(reponses.cuisine)) return false;
+    if (reponses.ambiance !== "any" && !r.ambiance.includes(reponses.ambiance)) return false;
+    if (reponses.zone === "gare") {
+      if (!["Gare Sud de France", "Près Gare Sud"].includes(r.zone)) return false;
+    } else if (reponses.zone === "odysseum") {
+      if (!["Gare Sud de France", "Près Gare Sud", "Odysseum"].includes(r.zone)) return false;
+    }
+    if (reponses.envie !== "any" && !r.envie.includes(reponses.envie)) return false;
+    return true;
+  });
+}
+
+function afficherResultats() {
+  document.getElementById("ecranQuestionnaire").classList.remove("actif");
+  document.getElementById("ecranResultats").classList.add("actif");
+
+  const filtres = filtrer();
+  const contenu = document.getElementById("contenuResultats");
+  const info = document.getElementById("infoFiltres");
+
+  info.textContent = `${filtres.length} restaurant${filtres.length > 1 ? "s" : ""} match${filtres.length > 1 ? "ent" : "e"} tes critères`;
+
+  if (filtres.length === 0) {
+    contenu.innerHTML = `
+      <div class="aucun-resto">
+        <h2>Aucun restaurant ne match</h2>
+        <p>Essaie de modifier tes critères, t'es trop exigeant !</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (filtres.length === 1) {
+    const r = filtres[0];
+    contenu.innerHTML = `
+      <div class="resultat-final visible">
+        <div>Y'a qu'un seul resto qui colle :</div>
+        <div class="resultat-nom">${r.nom}</div>
+        <div style="color: #aaa;">${r.type} • ${r.zone}</div>
+      </div>
+    `;
+    return;
+  }
+
+  contenu.innerHTML = `
+    <div class="roulette-wrapper">
+      <div class="fleche"></div>
+      <canvas id="roulette" width="450" height="450"></canvas>
+    </div>
+    <div style="text-align: center;">
+      <button class="btn" onclick="tourner()" id="btnSpin">TOURNER LA ROULETTE</button>
+    </div>
+    <div class="resultat-final" id="resultatFinal">
+      <div>Tu manges chez :</div>
+      <div class="resultat-nom" id="nomFinal"></div>
+      <div style="color: #aaa;" id="infoFinal"></div>
+    </div>
+    <div class="resultats-liste" style="margin-top: 25px;">
+      <h3 style="color: #ffd700; margin-top: 0;">Tous les restos qui matchent</h3>
+      ${filtres.map(r => `
+        <div class="resto-card">
+          <div class="resto-nom">${r.nom}</div>
+          <div class="resto-info">${r.type} • ${r.zone}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  window.restosFiltres = filtres;
+  dessinerRoulette();
+}
+
+function recommencer() {
+  for (const k in reponses) delete reponses[k];
+  questionActuelle = 0;
+  document.getElementById("ecranResultats").classList.remove("actif");
+  document.getElementById("ecranQuestionnaire").classList.add("actif");
+  afficherQuestion();
+}
+
+const couleurs = [
+  "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6",
+  "#1abc9c", "#e67e22", "#34495e", "#16a085", "#c0392b",
+  "#27ae60", "#2980b9", "#8e44ad", "#d35400", "#7f8c8d"
+];
+
+let angleActuel = 0;
+let enRotation = false;
+
+function dessinerRoulette() {
+  const canvas = document.getElementById("roulette");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const rayon = canvas.width / 2 - 5;
+  const restos = window.restosFiltres;
+  const nb = restos.length;
+  const arc = (2 * Math.PI) / nb;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < nb; i++) {
+    const a1 = i * arc + angleActuel;
+    const a2 = a1 + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, rayon, a1, a2);
+    ctx.closePath();
+    ctx.fillStyle = couleurs[i % couleurs.length];
+    ctx.fill();
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a1 + arc / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px Arial";
+    let nom = restos[i].nom;
+    if (nom.length > 20) nom = nom.substring(0, 18) + "...";
+    ctx.fillText(nom, rayon - 15, 4);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 25, 0, 2 * Math.PI);
+  ctx.fillStyle = "#ffd700";
+  ctx.fill();
+  ctx.strokeStyle = "#1a1a2e";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+function tourner() {
+  if (enRotation) return;
+  enRotation = true;
+  document.getElementById("btnSpin").disabled = true;
+  document.getElementById("resultatFinal").classList.remove("visible");
+
+  const tours = 5 + Math.random() * 5;
+  const angleFinal = angleActuel + tours * 2 * Math.PI;
+  const duree = 4500;
+  const debut = performance.now();
+  const depart = angleActuel;
+
+  function anim(t) {
+    const ec = t - debut;
+    const p = Math.min(ec / duree, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    angleActuel = depart + (angleFinal - depart) * ease;
+    dessinerRoulette();
+    if (p < 1) requestAnimationFrame(anim);
+    else finRotation();
+  }
+  requestAnimationFrame(anim);
+}
+
+function finRotation() {
+  const restos = window.restosFiltres;
+  const nb = restos.length;
+  const arc = (2 * Math.PI) / nb;
+  const norm = ((angleActuel % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const pointeur = (3 * Math.PI / 2 - norm + 2 * Math.PI) % (2 * Math.PI);
+  const idx = Math.floor(pointeur / arc);
+  const r = restos[idx];
+
+  document.getElementById("nomFinal").textContent = r.nom;
+  document.getElementById("infoFinal").textContent = r.type + " • " + r.zone;
+  document.getElementById("resultatFinal").classList.add("visible");
+
+  enRotation = false;
+  document.getElementById("btnSpin").disabled = false;
+}
+
+afficherQuestion();
+</script>
+
+</body>
+</html>
