@@ -153,6 +153,36 @@
     color: #aaa;
     margin-top: 4px;
   }
+  .lien-maps {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: #4285F4;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  .lien-maps:hover {
+    background: #5a95f5;
+  }
+  .lien-maps-grand {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 24px;
+    background: #4285F4;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  .lien-maps-grand:hover {
+    background: #5a95f5;
+  }
   .roulette-wrapper {
     position: relative;
     width: 450px;
@@ -349,6 +379,11 @@ const questions = [
 const reponses = {};
 let questionActuelle = 0;
 
+function lienMaps(resto) {
+  const requete = encodeURIComponent(resto.nom + " " + resto.zone + " Montpellier");
+  return "https://www.google.com/maps/search/?api=1&query=" + requete;
+}
+
 function afficherQuestion() {
   const q = questions[questionActuelle];
   const container = document.getElementById("questionContainer");
@@ -446,6 +481,7 @@ function afficherResultats() {
         <div>Y'a qu'un seul resto qui colle :</div>
         <div class="resultat-nom">${r.nom}</div>
         <div style="color: #aaa;">${r.type} • ${r.zone}</div>
+        <a href="${lienMaps(r)}" target="_blank" class="lien-maps-grand">Ouvrir dans Google Maps</a>
       </div>
     `;
     return;
@@ -463,6 +499,7 @@ function afficherResultats() {
       <div>Tu manges chez :</div>
       <div class="resultat-nom" id="nomFinal"></div>
       <div style="color: #aaa;" id="infoFinal"></div>
+      <a href="#" target="_blank" class="lien-maps-grand" id="lienMapsFinal">Ouvrir dans Google Maps</a>
     </div>
     <div class="resultats-liste" style="margin-top: 25px;">
       <h3 style="color: #ffd700; margin-top: 0;">Tous les restos qui matchent</h3>
@@ -470,6 +507,7 @@ function afficherResultats() {
         <div class="resto-card">
           <div class="resto-nom">${r.nom}</div>
           <div class="resto-info">${r.type} • ${r.zone}</div>
+          <a href="${lienMaps(r)}" target="_blank" class="lien-maps">Google Maps</a>
         </div>
       `).join("")}
     </div>
@@ -578,6 +616,7 @@ function finRotation() {
 
   document.getElementById("nomFinal").textContent = r.nom;
   document.getElementById("infoFinal").textContent = r.type + " • " + r.zone;
+  document.getElementById("lienMapsFinal").href = lienMaps(r);
   document.getElementById("resultatFinal").classList.add("visible");
 
   enRotation = false;
